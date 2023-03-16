@@ -1,41 +1,43 @@
-import os
 import subprocess
-import tempfile
-from io import BytesIO
-
-import ffmpeg
-from pydub import AudioSegment
-
-
-def convert_audio(request):
-    # Get the bytes and file extension from the request
-    audio_bytes = request.get_data()
-    file_extension = request.headers.get('file-extension', None)
-    # Move the moov atom to the start of the file
-    audio_bytes = move_moov_atom_to_start(audio_bytes)
-    return audio_bytes
 
 
 def move_moov_atom_to_start(audio_bytes):
+    """
+    This function takes an audio byte stream as input, processes it using FFmpeg to move the 'moov' atom
+    to the start of the file, and returns the processed audio byte stream.
 
-    # Create a temporary input file
-    with tempfile.NamedTemporaryFile(suffix=".m4a") as input_file:
-        # Write the audio bytes to the temporary file
-        input_file.write(audio_bytes)
-        # Flush the buffer to the file
-        input_file.flush()
+    :param audio_bytes: The input audio byte stream
+    :return: The processed audio byte stream
+    """
 
-        # Define the command to remux the file
-        command = ['ffmpeg', '-i', input_file.name, '-c', 'copy', '-f', 'm4a', '-movflags', '+faststart', 'output.m4a']
-        
-        # Execute the command using subprocess
-        subprocess.run(command, check=True)
+    # Define the FFmpeg command to remux the file:
+    # -i pipe:0: Use stdin (pipe:0) as the input source
+    # -c copy: Use the "copy" codec to avoid re-encoding the audio stream
+    # -f m4a: Force the output format to M4A
+    # -movflags +faststart: Move the 'moov' atom to the start of the file for faster playback
+    # pipe:1: Use stdout (pipe:1) as the output destination
+    command = [
+        'ffmpeg', '-i', 'pipe:0', '-c', 'copy', '-f', 'mp4',
+        '-movflags', '+faststart', 'pipe:1'
+    ]
 
-        # Read the output file
-        with open("output.m4a", "rb") as output_file:
-            output_bytes = output_file.read()
+    # Execute the FFmpeg command using subprocess:
+    # input: Pass the input audio byte stream to stdin
+    # stdout: Capture the processed audio byte stream from stdout
+    # stderr: Capture FFmpeg's error messages, if any
+    # check: Raise an exception if the subprocess exits with a non-zero status
+    try:
+        result = subprocess.run(
+            command, input=audio_bytes, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
+        )
+    except subprocess.CalledProcessError as e:
+        print("Error running ffmpeg command:", e.stderr.decode('utf-8'))
+        print("Command:", e.cmd)
+        print("Return code:", e.returncode)
+        print("Output:", e.output.decode('utf-8'))
+        if e.returncode != 0:
+            print("Error running ffmpeg command:", e.stderr.decode('utf-8'))
+        raise e
 
-    # Delete the output file if it exists
-    os.remove("output.m4a")
-
-    return output_bytes
+    # Get the processed audio byte stream from the result's stdout
+    return result.stdout
