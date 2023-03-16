@@ -1,0 +1,36 @@
+# Ignore directories
+__pycache__/
+output/
+input/
+
+# Ignore Python compiled files
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore Python virtual environments
+venv/
+*.venv
+.venv/
+
+# Ignore Jupyter Notebook files
+.ipynb_checkpoints
+
+# Ignore temporary files created by editors and operating systems
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+.DS_Store
+
+# Ignore Docker build files
+.dockerignore
+*.dockerfile
+
+# Ignore files created by Python packaging
+dist/
+build/
+*.egg-info/
+*.whl
+*.tar.gz
