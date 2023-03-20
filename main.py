@@ -1,9 +1,14 @@
 import os
 from flask import Flask, request
 from convert import move_moov_atom_to_start
+import logging
+
+# Add these lines to enable logging
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 
+app.logger.setLevel(logging.DEBUG)
 
 # main.py
 
@@ -16,7 +21,7 @@ def handle_request():
     # Move the moov atom to the start of the file
     audio_bytes = move_moov_atom_to_start(audio_bytes)
 
-    return audio_bytes, 200, {'Content-Type': 'audio/m4a'}
+    return audio_bytes, 200, {'Content-Type': 'audio/mp4'}
 
 
 
